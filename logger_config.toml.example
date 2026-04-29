@@ -1,0 +1,47 @@
+[logger]
+[logger.custom_level]
+[logger.custom_level.SERVICE_INFO]
+level_num = 19
+color = "<green>"
+[logger.custom_level.SERVICE_DEBUG]
+level_num = 18
+color = "<blue>"
+[logger.custom_level.METHOD_INFO]
+level_num = 17
+color = "<cyan>"
+[logger.custom_level.METHOD_DEBUG]
+level_num = 16
+color = "<magenta>"
+[logger.custom_level.PRIVATE_IMPLEMENTATION_INFO]
+level_num = 15
+color = "<yellow>"
+[logger.custom_level.PRIVATE_IMPLEMENTATION_DEBUG]
+level_num = 14
+color = "<magenta>"
+[logger.custom_level.CORE_INFO]
+level_num = 13
+color = "<yellow>"
+[logger.custom_level.CORE_DEBUG]
+level_num = 12
+color = "<magenta>"
+[logger.sink.console]
+sink = "stdout"
+level = "SERVICE_INFO"
+format = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
+colorize = "True"
+backtrace = "True"
+diagnose = "True"
+enqueue = "True"
+[logger.sink.file]
+sink = "logs/ad_data_aggregator.log"
+level = "DEBUG"
+format = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
+colorize = "True"
+rotation = "10 MB"
+retention = "7 days"
+compression = "zip"
+backtrace = "True"
+diagnose = "False"
+enqueue = "True"
+encoding = "utf-8"
+serialize = "False"
