@@ -1,0 +1,2 @@
+class ConfigServiceException(Exception):
+    pass
