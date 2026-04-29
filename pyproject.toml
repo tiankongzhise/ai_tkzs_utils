@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]         # 1. 添加插件
+build-backend = "hatchling.build"
+[project]
+name = "ai-tkzs-utils"
+dynamic = ["version"]   # 2. 动态版本好
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[tool.hatch.build]
+src = "src"  # 必须放这里！
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tkzs_utils"]
+
+[tool.hatch.version] # 设置版本号来源
+source = "vcs"    
+[tool.hatch.version.raw-options]
+#version_scheme = "no-guess-dev"               # 在非 release 标签时，不增加开发版本号
+local_scheme = "no-local-version"    
+
+[tool.hatch.build.hooks.vcs] 
+version-file = "_version.py"
+
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
