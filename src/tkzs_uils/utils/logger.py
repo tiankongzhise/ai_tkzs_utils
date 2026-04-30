@@ -6,6 +6,13 @@ from tkzs_uils.config_service.core import get_config_service,ConfigService
 from pathlib import Path
 from tkzs_uils.config_service.protocol import LoggerProtocol
 
+from pydantic import BaseModel, Field
+from pydantic_settings import (
+    BaseSettings,
+    JsonConfigSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 def _get_logger_config(config: ConfigService) -> tuple[list[CustomLoggerLevel]|None,list[LoggerParams]|None]:
     logger_config = config.get_config_values("logger",{})
@@ -47,3 +54,76 @@ def default_init_logger(env_file: list[str | Path] = [".env"],config_file: list[
             raise e 
     _update_logger_settings(logger_levels,logger_params)
     return logger
+
+
+class CustomLoggerLevel(BaseModel):
+    level_name:str
+    level_value:int
+    model_config = SettingsConfigDict(extra='ignore')
+
+class ProcessChainSettings(BaseModel):
+    timestamp_format:str|None = 'iso'
+    utc:bool = False
+    stack_info:bool = True
+    exc_info:bool = True
+    model_config = SettingsConfigDict(extra='ignore')
+
+
+class ConsoleHandlerSettings(BaseModel):
+    level:str = "INFO"
+    corlor:bool = True
+    model_config = SettingsConfigDict(extra='ignore')
+
+class FileHandlerSettings(BaseModel):
+    level:str = "DEBUG"
+    when:str = "midnight"
+    rotation:int = 1
+    retention:int = 7
+    compression:bool = True
+    encoding:str = "utf-8"
+    model_config = SettingsConfigDict(extra='ignore')
+
+
+class HandlerConfigBundle(BaseModel):
+    process_chain: ProcessChainSettings = Field(default_factory=ProcessChainSettings)
+    console_handler: ConsoleHandlerSettings = Field(default_factory=ConsoleHandlerSettings)
+    file_handler: FileHandlerSettings = Field(default_factory=FileHandlerSettings)
+    model_config = SettingsConfigDict(extra="ignore")
+
+
+class DefaultStructLogSettings(BaseSettings):
+    custom_logger_level: list[CustomLoggerLevel] = Field(default_factory=list)
+    handler_config: HandlerConfigBundle = Field(default_factory=HandlerConfigBundle)
+    model_config = SettingsConfigDict(
+        json_file='logger_config.json',
+        extra="ignore",
+        json_file_encoding="utf-8",
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            JsonConfigSettingsSource(settings_cls),
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+        )
+
+if __name__ == "__main__":
+    # dict_config = DatabaseSettings().model_dump()
+    # for key,value in dict_config.items():
+    #     if isinstance(value,SecretStr):
+    #         print(f"{key}: {value.get_secret_value()}")
+    #     else:
+    #         print(f"{key}: {value}")
+    dict_config = DefaultStructLogSettings().model_dump()
+    for key,value in dict_config.items():
+        print(f"{key}: {value}")

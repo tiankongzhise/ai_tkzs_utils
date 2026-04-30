@@ -1,0 +1,30 @@
+{
+    "custom_logger_level": [
+        {"level_name": "SERVICE_INFO", "level_value": 19, "level_color": "blue"},
+        {"level_name": "SERVICE_DEBUG", "level_value": 18, "level_color": "green"},
+        {"level_name": "METHOD_INFO", "level_value": 17, "level_color": "yellow"},
+        {"level_name": "METHOD_DEBUG", "level_value": 16, "level_color": "red"},
+        {"level_name": "PRIVATE_INFO", "level_value": 15, "level_color": "purple"},
+        {"level_name": "PRIVATE_DEBUG", "level_value": 14, "level_color": "orange"}
+    ],
+    "handler_config": {
+        "process_chain": {
+            "timestamp_format": "iso",
+            "utc": false,
+            "stack_info": true,
+            "exc_info": true
+        },
+        "console_handler": {
+            "level": "INFO",
+            "corlor": true
+        },
+        "file_handler": {
+            "level": "DEBUG",
+            "when": "midnight",
+            "rotation": 1,
+            "retention": 7,
+            "compression": true,
+            "encoding": "utf-8"
+        }
+    }
+}
