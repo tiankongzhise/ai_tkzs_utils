@@ -1,41 +1,16 @@
 import structlog
 import logging
 import sys
-
 from structlog.exceptions import DropEvent
-
-from .structlog_config_manager import StructLogSettings, CustomLoggerLevel, ProcessChainSettings
+from .structlog_config_manager import (
+    StructLogSettings,
+    CustomLoggerLevel,
+    ProcessChainSettings,
+    ConsoleHandlerSettings,
+    FileHandlerSettings,
+)
 import time
 import datetime
-class DefaultStructlogManager:
-    def __init__(self):
-        self._is_production = False
-        self._log_level = logging.INFO
-    @staticmethod
-    def configure_stdlib_logging():
-        """配置 logging 模块的根 Logger，仅控制最终输出流向"""
-        # 设置一个较低的门槛，实际门槛由 structlog 的 filtering 决定
-        logging.basicConfig(
-            format="%(message)s",  # structlog 自己负责格式化，这里仅占位
-            stream=sys.stdout,
-            level=logging.DEBUG,   # 允许所有日志通过，structlog 自己过滤
-        )
-    def minimal_console_logger(self):
-        """阶段 1: 基础控制台输出，保证启动日志不丢失"""
-        self.configure_stdlib_logging()
-        structlog.configure(
-            processors=[
-                structlog.processors.TimeStamper(fmt="iso"),
-                structlog.dev.ConsoleRenderer(),
-            ],
-            logger_factory=structlog.stdlib.LoggerFactory(),
-        )
-        logger = structlog.get_logger()
-        logger.info("日志系统已启动", phase="minimal")
-
-    def update_structlog_configuration(self,structlog_settings: StructLogSettings):
-        ...
-
 
 
 def get_minimal_console_logger():
@@ -145,15 +120,134 @@ def create_process_chain(process_chain: ProcessChainSettings):
 
 
 
-def update_structlog_configuration(structlog_settings: StructLogSettings):
-    # create_custom_logger_level(structlog_settings.custom_logger_level)
-    process_chain_processors = create_process_chain(structlog_settings.process_chain)
-    # create_console_handler(structlog_settings.console_handler)
-    # create_file_handler(structlog_settings.file_handler)
-    process_chain_processors.append(
-        # structlog.dev.ConsoleRenderer(colors=True,)
-        structlog.processors.JSONRenderer(ensure_ascii=False)
+def _create_console_handler(console_settings: "ConsoleHandlerSettings"):
+    """创建控制台日志处理器"""
+    import logging
+    import sys
+
+    level_str = console_settings.level.upper()
+    if not hasattr(logging, level_str):
+        raise ValueError(f"Invalid log level: {console_settings.level}")
+    level = getattr(logging, level_str)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(level)
+    return handler
+
+
+def _create_rotating_file_handler(file_settings: "FileHandlerSettings"):
+    """创建 RotatingFileHandler"""
+    import logging
+    from logging.handlers import RotatingFileHandler
+
+    level_str = file_settings.level.upper()
+    if not hasattr(logging, level_str):
+        raise ValueError(f"Invalid log level: {file_settings.level}")
+    level = getattr(logging, level_str)
+
+    rotating_settings = file_settings.rotating_file_handler
+    handler = RotatingFileHandler(
+        filename=file_settings.file_path,
+        maxBytes=rotating_settings.max_bytes,
+        backupCount=rotating_settings.backup_count,
+        encoding="utf-8",
+    )
+    handler.setLevel(level)
+    return handler
+
+
+def _create_timed_rotating_file_handler(file_settings: "FileHandlerSettings"):
+    """创建 TimedRotatingFileHandler"""
+    import logging
+    from logging.handlers import TimedRotatingFileHandler
+
+    level_str = file_settings.level.upper()
+    if not hasattr(logging, level_str):
+        raise ValueError(f"Invalid log level: {file_settings.level}")
+    level = getattr(logging, level_str)
+
+    timed_settings = file_settings.timed_rotating_file_handler
+    handler = TimedRotatingFileHandler(
+        filename=file_settings.file_path,
+        when=timed_settings.when,
+        interval=timed_settings.interval,
+        backupCount=timed_settings.backup_count,
+        encoding="utf-8",
+    )
+    handler.setLevel(level)
+    return handler
+
+
+def _create_custom_rotating_file_handler(file_settings: "FileHandlerSettings"):
+    """预留接口：创建自定义 RotatingFileHandler
+    
+    该接口预留用于实现更复杂的日志轮转策略，
+    例如同时按大小和时间进行轮转。
+    """
+    # TODO: 实现自定义日志轮转逻辑
+    # 支持以下特性:
+    # - 按大小和时间双重条件轮转
+    # - 压缩备份文件
+    # - 自定义文件名格式
+    raise NotImplementedError(
+        "CustomRotatingFileHandler is not yet implemented. "
+        "Please use 'rotating', 'timed_rotating', or 'no_rotating' instead."
+    )
+
+
+def _create_processor_formatter(renderer):
+    """创建 structlog 格式化器"""
+    return structlog.stdlib.ProcessorFormatter(
+        processor=renderer,
+        foreign_pre_chain=create_process_chain(
+            ProcessChainSettings(timestamp_format="ISO", utc=False, stack_info=True, exc_info=True)
+        ),
+    )
+
+
+def _setup_handlers(structlog_settings: StructLogSettings):
+    """根据配置设置日志处理器"""
+    import logging
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    # console handler
+    console_handler = _create_console_handler(structlog_settings.console_handler)
+    console_renderer = structlog.dev.ConsoleRenderer(
+        colors=structlog_settings.console_handler.corlor
+    )
+    console_handler.setFormatter(_create_processor_formatter(console_renderer))
+    root_logger.addHandler(console_handler)
+
+    # file handler
+    rotating_rule = structlog_settings.file_handler.active_rotating_rule
+    if rotating_rule != 'no_rotating':
+        if rotating_rule == 'rotating':
+            file_handler = _create_rotating_file_handler(structlog_settings.file_handler)
+        elif rotating_rule == 'timed_rotating':
+            file_handler = _create_timed_rotating_file_handler(structlog_settings.file_handler)
+        elif rotating_rule == 'custom_rotating':
+            file_handler = _create_custom_rotating_file_handler(structlog_settings.file_handler)
+        else:
+            raise ValueError(f"Unknown rotating rule: {rotating_rule}")
+
+        file_handler.setFormatter(
+            _create_processor_formatter(
+                structlog.processors.JSONRenderer(ensure_ascii=False)
+            )
         )
+        root_logger.addHandler(file_handler)
+
+
+def update_structlog_configuration(structlog_settings: StructLogSettings):
+    # 设置 logging handlers
+    _setup_handlers(structlog_settings)
+
+    process_chain_processors = create_process_chain(structlog_settings.process_chain)
+    process_chain_processors.append(
+        structlog.processors.JSONRenderer(ensure_ascii=False)
+    )
     structlog.configure(
         processors=process_chain_processors,
         # 使用 stdlib 的 LoggerFactory，让 structlog 写入标准库的日志系统
