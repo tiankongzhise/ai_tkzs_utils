@@ -26,7 +26,7 @@ class ReprSettings(BaseModel):
 
 
 class ProcessChainSettings(BaseModel):
-    timestamp_format:str|None = 'iso'
+    timestamp_format:str = 'ISO'
     utc:bool = False
     stack_info:bool = True
     exc_info:bool = True

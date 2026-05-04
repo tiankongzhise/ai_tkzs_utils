@@ -32,7 +32,7 @@
         }
     ],
     "process_chain": {
-        "timestamp_format": "iso",
+        "timestamp_format": "%Y-%m-%d %H:%M:%S.%f",
         "utc": false,
         "stack_info": true,
         "exc_info": true
