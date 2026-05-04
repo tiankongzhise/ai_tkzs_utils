@@ -1,0 +1,66 @@
+{
+    "custom_logger_level": [
+        {
+            "level_name": "SERVICE_INFO",
+            "level_value": 19,
+            "level_color": "blue"
+        },
+        {
+            "level_name": "SERVICE_DEBUG",
+            "level_value": 18,
+            "level_color": "green"
+        },
+        {
+            "level_name": "METHOD_INFO",
+            "level_value": 17,
+            "level_color": "yellow"
+        },
+        {
+            "level_name": "METHOD_DEBUG",
+            "level_value": 16,
+            "level_color": "red"
+        },
+        {
+            "level_name": "PRIVATE_INFO",
+            "level_value": 15,
+            "level_color": "purple"
+        },
+        {
+            "level_name": "PRIVATE_DEBUG",
+            "level_value": 14,
+            "level_color": "orange"
+        }
+    ],
+    "process_chain": {
+        "timestamp_format": "iso",
+        "utc": false,
+        "stack_info": true,
+        "exc_info": true
+    },
+    "console_handler": {
+        "level": "INFO",
+        "corlor": true
+    },
+    "file_handler": {
+        "level": "DEBUG",
+        "file_path": "logs/app.log",
+        "active_rotating_rule": "no_rotating",
+        "rotating_file_handler": {
+            "max_bytes": "10",
+            "backup_count": 5
+        },
+        "timed_rotating_file_handler": {
+            "when": "midnight",
+            "interval": 1,
+            "backup_count": 7
+        },
+        "custom_rotating_file_handler": {
+            "max_bytes": 10485760,
+            "when": "midnight",
+            "interval": 1,
+            "backup_count": 7,
+            "compression": true,
+            "encoding": "utf-8"
+        }
+    }
+}

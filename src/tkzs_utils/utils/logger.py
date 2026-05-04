@@ -5,7 +5,7 @@ from tkzs_uils.logger_service.exception import LoggerServiceException
 from tkzs_uils.config_service.core import get_config_service,ConfigService
 from pathlib import Path
 from tkzs_uils.config_service.protocol import LoggerProtocol
-
+import os
 from pydantic import BaseModel, Field
 from pydantic_settings import (
     BaseSettings,
@@ -95,7 +95,7 @@ class DefaultStructLogSettings(BaseSettings):
     custom_logger_level: list[CustomLoggerLevel] = Field(default_factory=list)
     handler_config: HandlerConfigBundle = Field(default_factory=HandlerConfigBundle)
     model_config = SettingsConfigDict(
-        json_file='logger_config.json',
+        json_file=os.getenv("LOG_CONFIG_FILE", "logger_config.json"),
         extra="ignore",
         json_file_encoding="utf-8",
     )

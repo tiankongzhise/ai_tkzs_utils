@@ -10,11 +10,15 @@ requires-python = ">=3.14"
 dependencies = [
     "cryptography>=47.0.0",
     "loguru>=0.7.3",
+    "pydantic-settings>=2.14.0",
     "python-dotenv>=1.2.2",
+    "structlog>=25.5.0",
 ]
 
 [tool.hatch.build]
-src = "src"  # 必须放这里！
+# Editable installs (uv sync / pip install -e) must put `src` on sys.path so
+# `import tkzs_utils` resolves. Without this, only dist-info is installed.
+dev-mode-dirs = ["src"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tkzs_utils"]
